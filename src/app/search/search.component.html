@@ -34,7 +34,7 @@
                 </ng-container>
                 <sq-user-menu></sq-user-menu>
             </ul>
-            
+
             <sq-feedback-menu [style]="'primary'" [rightAligned]="true" class="ml-1" *ngIf="loginService.complete">
             </sq-feedback-menu>
 
@@ -55,10 +55,10 @@
                 <sq-facet-tree #facet [results]="results" [aggregation]="'Treepath'"></sq-facet-tree>
             </sq-facet-card>
             <sq-facet-card [title]="multiFacetTitle" [icon]="multiFacetIcon" [collapsible]="false" [buttonsStyle]="isDark()? 'dark' : 'light'" class="d-block mt-3">
-                <sq-facet-multi #facet [results]="results" [facets]="facets" (events)="facetChanged($event)"></sq-facet-multi>
+                <sq-facet-multi #facet [results]="results" [facets]="facets" [showProgressBar]="false" (events)="facetChanged($event)"></sq-facet-multi>
             </sq-facet-card>
         </div>
-        
+
         <!-- Result selection toolbar -->
         <div class="card text-white bg-primary position-fixed action-bar" *ngIf="ui.screenSizeIsGreater('sm')">
             <div class="card-header">
@@ -73,8 +73,8 @@
             <sq-tabs [results]="results"></sq-tabs>
 
             <!-- Toolbar -->
-            <div class="d-flex flex-row align-items-center">
-                <sq-breadcrumbs [results]="results" [allowDeletion]="false" class="flex-grow-1 flex-basis-0"></sq-breadcrumbs>
+            <div class="d-flex">
+                <sq-facet-mysearch [results]="results" [allowDeletion]="true" class="flex-grow-1 flex-basis-0"></sq-facet-mysearch>
                 <sq-results-counter [rowCount]="searchService.rowCount" class="mx-2"></sq-results-counter>
                 <sq-sort-selector [results]="results" [rightAligned]="true" [style]="isDark()? 'dark' : 'light'"></sq-sort-selector>
             </div>

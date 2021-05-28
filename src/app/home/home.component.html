@@ -1,4 +1,4 @@
-<div class="d-flex flex-column align-items-center justify-content-center home">
+<div transition-style="in:circle:hesitate" class="d-flex flex-column align-items-center justify-content-center home">
     <!-- Home page logo -->
     <img src="assets/vanilla-logo.png" id="logo" *ngIf="!isDark()">
     <img src="assets/vanilla-logo-dark.png" id="logo" *ngIf="isDark()">
@@ -11,7 +11,7 @@
 
     <div class="d-flex align-items-center mt-2">
         <!-- Login/Logout link -->    
-        <button class="btn btn-link" (click)="toggleLogin()">{{ (!!loginService.principal ? 'msg#userMenu.logout' : 'msg#userMenu.login') | sqMessage}}</button>
+        <button class="btn btn-link" (click)="toggleLogin()">{{ (loginService.complete ? 'msg#userMenu.logout' : 'msg#userMenu.login') | sqMessage}}</button>
     
         <span> &bull; </span>
     

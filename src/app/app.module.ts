@@ -31,6 +31,7 @@ import { BsFeedbackModule } from '@sinequa/components/feedback';
 import { BsPreviewModule } from '@sinequa/components/preview';
 import { MetadataModule } from '@sinequa/components/metadata';
 import { BsSelectionModule } from '@sinequa/components/selection';
+import { BsAdvancedModule } from '@sinequa/components/advanced';
 
 // Components
 import { AppComponent } from "./app.component";
@@ -48,7 +49,7 @@ import { environment } from "../environments/environment";
 export const startConfig: StartConfig = {
     app: "training",
     production: environment.production,
-    autoSAMLProvider: environment.autoSAMLProvider,
+    // autoSAMLProvider: environment.autoSAMLProvider,
     auditEnabled: true
 };
 
@@ -80,7 +81,6 @@ import {LocalesConfig, Locale} from "@sinequa/core/intl";
 import enLocale from "../locales/en";
 import frLocale from "../locales/fr";
 import deLocale from "../locales/de";
-import { BsAdvancedModule } from '@sinequa/components/advanced';
 
 export class AppLocalesConfig implements LocalesConfig {
     defaultLocale: Locale;
@@ -104,7 +104,6 @@ export const breakpoints = {
     sm: "(min-width: 576px) and (max-width: 991.98px)",
     xs: "(max-width: 575.98px)",
 };
-
 
 @NgModule({
     imports: [

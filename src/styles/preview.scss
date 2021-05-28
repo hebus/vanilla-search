@@ -82,22 +82,87 @@ $highlights: map-merge(map-merge($extracts-highlights, $terms-highlights), $meta
     }
 }
 
+@mixin simpleHighlight($term) {
+    $tag-cloud: map-get($highlights, $term);
+    $color: map-get($tag-cloud, "main-color");
+
+    .sq-metadata-color-#{$term} {
+        color: $color !important;
+
+        &:hover {
+            background-color: lighten($color, 55%) !important;
+            @if lighten($color, 55%) == white {
+              background-color: lighten($color, 20%) !important;
+            }
+            opacity: 0.7 !important;
+          }
+    }
+
+    .sq-metadata-color-#{$term}.sq-metadata-border {
+      border: 1px solid $color !important;
+    }
+}
 
 // Actually generate highlight rules
 
 @each $name in map-keys($highlights) {
     @include highlight($name);
     @include svgHighlight($name);
+    @include simpleHighlight($name);
+}
+
+// overrides preview's legacy css
+
+// pdfAdvanced
+.stl_ {
+    content-visibility: auto;
+    display: inline-block;
+    background-color: white;
+    border: solid 1px lightgrey;
+    margin: 24px;
+}
+
+// sinequePdfToHtml
+// add a shadow on page navigator
+body.bd {
+    background-color: #eee;
+
+    > div.ph {
+        box-shadow: 0 4px 8px 0 rgb(0 0 0 / 20%), 0 6px 20px 0 rgb(0 0 0 / 19%);
+    }
+    
+    .pages {
+        zoom: 0.5;
+        content-visibility: auto;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 40px;
+        margin: 20px;
+    }
+    
+    // as style is inline, this selector is very specific to overrides it
+    div[style="position:relative;border:0px;"] {
+        margin: 24px;
+        content-visibility: visible;
+
+        > img {
+            background-color: white;
+            border: 1px solid lightgrey;
+            box-shadow: 0 4px 8px 0 rgb(0 0 0 / 20%), 0 6px 20px 0 rgb(0 0 0 / 19%);
+            margin-bottom: 16px;
+            margin-right: 16px;
+        }
+    
+    }
 }
 
 
 // Currently selected highlights
-
 .sq-current {
     border: 2px dashed rgb(5,5,5) !important;
     animation: 0.3s linear shadowfocus;
-    // raise above other spans so the border is not overlapped
-    position: relative;
+    // raise above other span   s so the border is not overlapped
+    // position: relative;
     z-index: 1;
 }
 
@@ -133,31 +198,6 @@ line.sq-svg {
 
 
 // Tooltip injected in the iframe
-.bottom-tooltip {
-    &::after {
-      bottom: 100%; /* At the top of the tooltip */
-      left: 50%;
-      content: " ";
-      position: absolute;
-      margin-left: -5px;
-      border-width: 5px;
-      border-style: solid;
-      border-color: transparent transparent #4c4c4c transparent;
-  }
-}
-
-.top-tooltip {
-    &::after {
-      content: " ";
-      position: absolute;
-      top: 100%; /* At the bottom of the tooltip */
-      left: 50%;
-      margin-left: -5px;
-      border-width: 5px;
-      border-style: solid;
-      border-color: #4c4c4c transparent transparent transparent;
-  }
-}
 
 .sq-selection-tooltip {
 
@@ -171,7 +211,7 @@ line.sq-svg {
     background-color: #4c4c4c;
     color: #eee;
     padding: 0.5em;
-    border-radius: 12px;
+    border-radius: 3px;
     z-index: 100000000000;
 
     .display {
@@ -205,9 +245,10 @@ line.sq-svg {
         border: 1px solid #eee;
         height: 25px;
         cursor: pointer;
-        border-radius: 12px;
+        border-radius: 3px;
         font-size: 16px;
         line-height: 20px;
+        white-space: nowrap;
 
         &:hover {
             background-color: #eee;
@@ -218,4 +259,28 @@ line.sq-svg {
     .sq-preview-search-icon:after {
         content: '🔍';
     }
+
+    --left: 50%;
+    
+    &::after {
+        content: " ";
+        position: absolute;
+        left: var(--left);
+        margin-left: -5px;
+        border-width: 5px;
+        border-style: solid;
+    }
+
+    &.sq-bottom-tooltip::after {
+        bottom: 100%; /* At the top of the tooltip */
+        border-color: transparent transparent #4c4c4c transparent;
+    }
+    
+    &.sq-top-tooltip::after {
+        top: 100%; /* At the bottom of the tooltip */
+        border-color: #4c4c4c transparent transparent transparent;
+    }
+
+    --factor: 1.0;
+    zoom: var(--factor);
 }

@@ -9,7 +9,7 @@ import { UIService } from '@sinequa/components/utils';
 import { AppService } from '@sinequa/core/app-utils';
 import { IntlService } from '@sinequa/core/intl';
 import { LoginService } from '@sinequa/core/login';
-import { Record } from '@sinequa/core/web-services';
+import { AuditWebService, Record } from '@sinequa/core/web-services';
 import { Subscription } from 'rxjs';
 import { FACETS, FEATURES, METADATA } from '../../config';
 
@@ -45,6 +45,7 @@ export class SearchComponent implements OnInit, OnDestroy {
     public searchService: SearchService,
     public selectionService: SelectionService,
     public loginService: LoginService,
+    public auditService: AuditWebService,
     public ui: UIService,
   ) {
 
@@ -91,10 +92,7 @@ export class SearchComponent implements OnInit, OnDestroy {
    * the app configuration on the server
    */
   public get facets(): FacetConfig[] {
-    if(this.appService.app && this.appService.app.data && this.appService.app.data.facets){
-      return <FacetConfig[]> <any> this.appService.app.data.facets;
-    }
-    return FACETS;
+    return this.appService.app?.data?.facets as any as FacetConfig[] || FACETS;
   }
 
   /**
@@ -103,10 +101,7 @@ export class SearchComponent implements OnInit, OnDestroy {
    * the app configuration on the server
    */
   public get features(): string[] {
-    if(this.appService.app && this.appService.app.data && this.appService.app.data.features){
-      return <string[]> <any> this.appService.app.data.features;
-    }
-    return FEATURES;
+    return this.appService.app?.data?.features as string[] || FEATURES;
   }
 
   /**
@@ -115,10 +110,7 @@ export class SearchComponent implements OnInit, OnDestroy {
    * the app configuration on the server
    */
   public get metadata(): string[] {
-    if(this.appService.app && this.appService.app.data && this.appService.app.data.metadata){
-      return <string[]> <any> this.appService.app.data.metadata;
-    }
-    return METADATA;
+    return this.appService.app?.data?.metadata as string[] || METADATA;
   }
 
   /**
@@ -166,6 +158,10 @@ export class SearchComponent implements OnInit, OnDestroy {
    */
   closeDocument(){
     if(this.openedDoc){
+      this.auditService.notify({
+        type: "Preview.close",
+        detail: this.previewService.getAuditPreviewDetail(this.openedDoc.id, this.searchService.query, this.openedDoc, this.searchService.results?.id)
+      });
       this.openedDoc = undefined;
       if(this.ui.screenSizeIsEqual('md')){
         this._showFilters = true; // Show filters on medium screen when document is closed

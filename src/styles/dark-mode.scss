@@ -4,6 +4,8 @@
 $dark-color: #f8f9fa;
 $dark-secondary: #c9c0c0;
 $dark-background: #1c1e21;
+$dark-background-highlight: rgb(255,255,255,0.15);
+$dark-background-hover: rgb(255,255,255,0.08);
 $dark-borders: #777373;
 
 body.dark {
@@ -11,8 +13,8 @@ body.dark {
     background-color: $dark-background;
     color: $dark-color;
 
-    // Bootstrap components dark mode 
-    
+    // Bootstrap components dark mode
+
     a:not(.btn) {
         color: #9bccff;
     }
@@ -28,14 +30,14 @@ body.dark {
     .card {
         background-color: $dark-background;
         border-color: $dark-borders;
-        box-shadow: 0px 3px 9px 2px rgba(255, 255, 255, 0.2);
+        box-shadow: 0px 3px 9px 2px $dark-background-highlight;
 
         .card-header {
-            background-color: rgb(255,255,255,0.15);
+            background-color: $dark-background-highlight;
             border-color: $dark-borders;
         }
     }
-    
+
     .navbar-dark .navbar-nav .nav-link {
         color: $dark-color;
     }
@@ -43,6 +45,17 @@ body.dark {
     .btn-dark:not(:hover) {
         border-color: transparent;
         background-color: inherit;
+    }
+
+    .btn-dark:not(:disabled):not(.disabled):active,
+    .btn-dark:not(:disabled):not(.disabled).active,
+    .show > .btn-dark.dropdown-toggle {
+        background-color: $dark-background-highlight;
+        border-color: $dark-borders;
+    }
+
+    .dropdown .dropdown-divider {
+        border-color: $dark-borders;
     }
 
     .list-group {
@@ -56,7 +69,7 @@ body.dark {
             border-color: $dark-borders;
 
             &:active {
-                background-color: #494d50;
+                background-color: $dark-background-highlight;
                 color: #fff;
             }
 
@@ -65,7 +78,7 @@ body.dark {
                 color: #fbfdff;
             }
         }
-        
+
         .list-group-item-primary {
             color: #004085 !important;
             background-color: #b8daff !important;
@@ -82,7 +95,7 @@ body.dark {
         .list-group-item-success {
             color: #155724 !important;
             background-color: #c3e6cb  !important;
-            
+
             a {
                 color: inherit;
             }
@@ -92,7 +105,7 @@ body.dark {
             }
         }
     }
-    
+
     .text-muted {
         color: #c1cad2 !important;
     }
@@ -101,7 +114,7 @@ body.dark {
         background: #1c1e21;
         border-color: $dark-borders;
 
-        a {            
+        a {
             color: #f8f9fa;
         }
 
@@ -110,7 +123,7 @@ body.dark {
             color: #fbfdff;
         }
     }
-    
+
     @include media-breakpoint-up(sm) {
         .navbar-right, .dropdown-menu-right {
             .dropdown-submenu > a:before {
@@ -129,7 +142,7 @@ body.dark {
         .modal-header {
             border-color:$dark-borders;
         }
-        
+
         .modal-footer {
             border-color:$dark-borders;
         }
@@ -140,7 +153,7 @@ body.dark {
     }
 
     app-search-form {
-        box-shadow: 0px 0px 15px 4px rgba(255, 255, 255, 0.2);
+        box-shadow: 0px 0px 15px 4px $dark-background-highlight;
         
         .list-group-item:not(.list-group-item-primary){
             .autocomplete-item {
@@ -150,16 +163,16 @@ body.dark {
             }
         }
     }
-    
+
     app-search nav {
-        box-shadow: 1px 3px 4px 0px rgba(255, 255, 255, 0.2);
+        box-shadow: 1px 3px 4px 0px $dark-background-highlight;
     }
 
-        
+
     sq-tabs {
         .nav-tabs {
             border-bottom: 1px solid $dark-borders;
-            
+
             .nav-item .count, .nav-link.disabled {
                 color: $dark-secondary;
             }
@@ -196,34 +209,34 @@ body.dark {
     }
 
     .record {
-        
+
         &:hover {
-            background-color: rgba(255, 255, 255, 0.08);
+            background-color: $dark-background-hover;
         }
-    
+
         &.selected {
-            background-color: rgba(255, 255, 255, 0.15);
+            background-color: $dark-background-highlight;
         }
-    
+
         sq-result-source {
             span, a {
                 color: #a9c7b4;
             }
         }
-    
+
         sq-result-extracts {
             p {
                 color: $dark-secondary;
             }
         }
-    
+
         sq-result-missing-terms {
             color: #b8b2b2;
         }
     }
 
     sq-facet-card.facet-preview {
-        .card-header {    
+        .card-header {
             sq-metadata {
                 color: $dark-secondary;
             }
@@ -242,7 +255,7 @@ body.dark {
         }
 
         .page-link:hover {
-            background-color: rgb(255,255,255,0.2);
+            background-color: $dark-background-hover;
             border-color: $dark-borders;
         }
     }
@@ -250,6 +263,17 @@ body.dark {
     app-preview {
         .border-top, .border-right {
             border-color: $dark-borders;
+        }
+    }
+    
+    sq-facet-mysearch {
+        .sq-metadata-item {
+            background-color: $dark-background;
+    
+            &:hover {
+                background-color: $dark-background;
+                opacity: 0.8;
+            }
         }
     }
 }

@@ -1,14 +1,13 @@
-import { Component, OnInit, OnChanges, Input, Optional, Inject, InjectionToken, OnDestroy} from '@angular/core';
+import { Component, OnInit, OnChanges, Input, Optional, Inject, InjectionToken, OnDestroy, ChangeDetectorRef} from '@angular/core';
 import { Title } from '@angular/platform-browser';
 import { Location } from "@angular/common";
 import { ActivatedRoute, Router, NavigationEnd, RouterEvent } from '@angular/router';
 import { LoginService } from '@sinequa/core/login';
-import { PreviewData } from '@sinequa/core/web-services';
+import { PreviewData, Results } from '@sinequa/core/web-services';
 import { Query } from '@sinequa/core/app-utils';
 import { Action } from '@sinequa/components/action';
 import { PreviewService, PreviewDocument } from '@sinequa/components/preview';
 import { SearchService } from '@sinequa/components/search';
-import { SafeResourceUrl } from '@angular/platform-browser';
 import { MODAL_MODEL } from '@sinequa/core/modal';
 import { Subscription } from 'rxjs';
 import { IntlService } from '@sinequa/core/intl';
@@ -54,7 +53,9 @@ export class PreviewComponent implements OnInit, OnChanges, OnDestroy {
 
   // Set when the preview service responds
   previewData?: PreviewData;
-  downloadUrl?: SafeResourceUrl;
+  downloadUrl?: string;
+  currentUrl?: string;
+  sandbox?: string | null;
 
   // Set when the preview has finished loading and initializing
   previewDocument?: PreviewDocument;
@@ -66,7 +67,9 @@ export class PreviewComponent implements OnInit, OnChanges, OnDestroy {
   subpanels = ["extracts", "entities"];
   subpanel = 'extracts';
   previewSearchable = true;
-  loadingPreview = false;
+
+  // Page management for splitted documents
+  pagesResults: Results;
 
   // Subscriptions
   private loginSubscription: Subscription;
@@ -76,12 +79,13 @@ export class PreviewComponent implements OnInit, OnChanges, OnDestroy {
   tooltipEntityActions: Action[] = [];
   tooltipTextActions: Action[] = [];
 
-  private readonly scaleFactorThreshold = 0.1;
+  private readonly scaleFactorThreshold = 0.05;
   scaleFactor = 1.0;
 
   constructor(
     @Optional() @Inject(PREVIEW_CONFIG) previewConfig: PreviewConfig,
     @Optional() @Inject(MODAL_MODEL) previewInput: PreviewInput,
+    private cdr: ChangeDetectorRef,
     protected router: Router,
     protected route: ActivatedRoute,
     protected titleService: Title,
@@ -91,7 +95,8 @@ export class PreviewComponent implements OnInit, OnChanges, OnDestroy {
     protected previewService: PreviewService,
     protected searchService: SearchService,
     public prefs: UserPreferences,
-    public ui: UIService) {
+    public ui: UIService,
+    protected activatedRoute: ActivatedRoute) {
 
     // If the page is refreshed login needs to happen again, then we can get the preview data
     this.loginSubscription = this.loginService.events.subscribe({
@@ -214,9 +219,17 @@ export class PreviewComponent implements OnInit, OnChanges, OnDestroy {
       this.previewService.getPreviewData(this.id, this.query).subscribe(
         previewData => {
           this.previewData = previewData;
-          this.downloadUrl = this.previewData ? this.previewService.makeDownloadUrl(this.previewData.documentCachedContentUrl) : undefined;
-          this.titleService.setTitle(this.intlService.formatMessage("msg#preview.pageTitle", {title: previewData.record.title || ""}));
-          this.loadingPreview = true;
+          const url = previewData?.documentCachedContentUrl;
+          // Manage splitted documents
+          const pageNumber = this.previewService.getPageNumber(previewData.record);
+          if(pageNumber) {
+            this.previewService.fetchPages(previewData.record.containerid!, this.query!)
+              .subscribe(results => this.pagesResults = results);
+          }
+          this.currentUrl = url;
+          this.downloadUrl = url ? this.previewService.makeDownloadUrl(url) : undefined;
+          this.sandbox = ["xlsx","xls"].includes(previewData.record.docformat) ? null : undefined;
+          this.titleService.setTitle(this.intlService.formatMessage("msg#preview.pageTitle", {title: previewData?.record?.title || ""}));
         }
       );
     }
@@ -234,12 +247,21 @@ export class PreviewComponent implements OnInit, OnChanges, OnDestroy {
         .map(key => ({entity: key, value: uncheckedEntities[key]}))
         .filter(item => item.value === true)
         .map(item => previewDocument.toggleHighlight(item.entity, false));
-        
+
       this.previewDocument = previewDocument;
       this.previewDocument.selectHighlight("matchlocations", 0); // Scroll to first match
-      this.loadingPreview = false;
     }
-}
+  }
+
+  onPreviewPageChange(event: string | PreviewDocument) {
+    if (event instanceof PreviewDocument) {
+      this.previewDocument = event;
+    } else {
+      this.currentUrl = event;
+      this.previewDocument = undefined;
+    }
+    this.cdr.detectChanges();
+  }
 
   /**
    * Back button (navigating back to search)
@@ -263,6 +285,38 @@ export class PreviewComponent implements OnInit, OnChanges, OnDestroy {
   openOriginalDoc(){
     if (this.previewData) {
       this.searchService.notifyOpenOriginalDocument(this.previewData.record);
+    }
+  }
+
+  /**
+   * Navigate to another page of this document
+   * @param id
+   */
+  gotoPage(page: number) {
+    const containerid = this.previewData?.record.containerid;
+    if(containerid) {
+      const id = `${containerid}/#${page}#`;
+      this.router.navigate([], {
+        relativeTo: this.activatedRoute,
+        queryParams: { id }, // Assumes that we can keep the same query(!)
+        queryParamsHandling: 'merge'
+      });
+    }
+  }
+
+  /**
+   * Search for new text within the same document
+   * @param text
+   */
+  searchText(text: string) {
+    if(this.query && this.query.text !== text) {
+      this.query.text = text;
+      this.router.navigate([], {
+        relativeTo: this.route,
+        queryParams: {query: this.query.toJsonForQueryString()},
+        queryParamsHandling: 'merge',
+        state: {}
+      });
     }
   }
 
