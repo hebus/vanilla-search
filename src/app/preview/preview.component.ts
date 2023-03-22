@@ -1,19 +1,19 @@
-import { Component, OnInit, OnChanges, Input, Optional, Inject, InjectionToken, OnDestroy, ChangeDetectorRef} from '@angular/core';
+import { Component, OnInit, OnChanges, Input, Optional, Inject, InjectionToken, OnDestroy, ChangeDetectorRef, NgZone} from '@angular/core';
 import { Title } from '@angular/platform-browser';
 import { Location } from "@angular/common";
 import { ActivatedRoute, Router, NavigationEnd, RouterEvent } from '@angular/router';
+import { Subscription, filter } from 'rxjs';
+
 import { LoginService } from '@sinequa/core/login';
-import { PreviewData, Results } from '@sinequa/core/web-services';
-import { Query } from '@sinequa/core/app-utils';
+import { AuditEventType, PreviewData, Results } from '@sinequa/core/web-services';
+import { AppService, Query } from '@sinequa/core/app-utils';
 import { Action } from '@sinequa/components/action';
 import { PreviewService, PreviewDocument } from '@sinequa/components/preview';
 import { SearchService } from '@sinequa/components/search';
 import { MODAL_MODEL } from '@sinequa/core/modal';
-import { Subscription } from 'rxjs';
 import { IntlService } from '@sinequa/core/intl';
 import { UIService } from '@sinequa/components/utils';
 import { UserPreferences } from '@sinequa/components/user-settings';
-import {filter} from 'rxjs/operators';
 
 export interface PreviewConfig {
   initialCollapsedPanel?: boolean;
@@ -57,6 +57,8 @@ export class PreviewComponent implements OnInit, OnChanges, OnDestroy {
   currentUrl?: string;
   sandbox?: string | null;
 
+  loading = false;
+
   // Set when the preview has finished loading and initializing
   previewDocument?: PreviewDocument;
 
@@ -67,6 +69,7 @@ export class PreviewComponent implements OnInit, OnChanges, OnDestroy {
   subpanels = ["extracts", "entities"];
   subpanel = 'extracts';
   previewSearchable = true;
+  minimapType = "extractslocations"
 
   // Page management for splitted documents
   pagesResults: Results;
@@ -79,7 +82,7 @@ export class PreviewComponent implements OnInit, OnChanges, OnDestroy {
   tooltipEntityActions: Action[] = [];
   tooltipTextActions: Action[] = [];
 
-  private readonly scaleFactorThreshold = 0.05;
+  private readonly scaleFactorThreshold = 0.2;
   scaleFactor = 1.0;
 
   constructor(
@@ -94,9 +97,12 @@ export class PreviewComponent implements OnInit, OnChanges, OnDestroy {
     protected intlService: IntlService,
     protected previewService: PreviewService,
     protected searchService: SearchService,
+    public appService: AppService,
     public prefs: UserPreferences,
     public ui: UIService,
-    protected activatedRoute: ActivatedRoute) {
+    protected activatedRoute: ActivatedRoute,
+    private zone: NgZone
+    ) {
 
     // If the page is refreshed login needs to happen again, then we can get the preview data
     this.loginSubscription = this.loginService.events.subscribe({
@@ -114,7 +120,6 @@ export class PreviewComponent implements OnInit, OnChanges, OnDestroy {
       ).subscribe({
       next: (event) => {
         if (event instanceof NavigationEnd) {
-          this.clear();
           this.getPreviewDataFromUrl();
         }
       }
@@ -220,6 +225,11 @@ export class PreviewComponent implements OnInit, OnChanges, OnDestroy {
         previewData => {
           this.previewData = previewData;
           const url = previewData?.documentCachedContentUrl;
+          if(previewData.highlightsPerCategory['matchingpassages']?.values.length && !this.subpanels.includes("passages")) {
+            this.subpanels.unshift("passages");
+            this.subpanel = "passages";
+            this.minimapType = "matchingpassages";
+          }
           // Manage splitted documents
           const pageNumber = this.previewService.getPageNumber(previewData.record);
           if(pageNumber) {
@@ -230,6 +240,7 @@ export class PreviewComponent implements OnInit, OnChanges, OnDestroy {
           this.downloadUrl = url ? this.previewService.makeDownloadUrl(url) : undefined;
           this.sandbox = ["xlsx","xls"].includes(previewData.record.docformat) ? null : undefined;
           this.titleService.setTitle(this.intlService.formatMessage("msg#preview.pageTitle", {title: previewData?.record?.title || ""}));
+          this.loading = true;
         }
       );
     }
@@ -240,7 +251,8 @@ export class PreviewComponent implements OnInit, OnChanges, OnDestroy {
    * @param previewDocument
    */
   onPreviewReady(previewDocument: PreviewDocument){
-    if(this.previewData) {
+    if (this.previewData) {
+      this.loading = false;
       // uses preferences to uncheck highlighted entities
       const uncheckedEntities = this.entitiesStartUnchecked;
       Object.keys(uncheckedEntities)
@@ -249,16 +261,42 @@ export class PreviewComponent implements OnInit, OnChanges, OnDestroy {
         .map(item => previewDocument.toggleHighlight(item.entity, false));
 
       this.previewDocument = previewDocument;
-      this.previewDocument.selectHighlight("matchlocations", 0); // Scroll to first match
+      if(!this.highlightMostRelevant(this.previewData, this.previewDocument, "matchingpassages")) {
+        this.highlightMostRelevant(this.previewData, this.previewDocument, "extractslocations");
+      }
     }
+  }
+
+  highlightMostRelevant(previewData: PreviewData, previewDocument: PreviewDocument, type: string): boolean {
+    const extracts = this.previewService.getExtracts(previewData, undefined, type);
+    if(extracts[0]) {
+      const mostRelevantExtract = extracts[0].textIndex;
+      previewDocument.selectHighlight(type, mostRelevantExtract); // Scroll to most relevant extract
+      return true;
+    }
+    return false;
+  }
+
+  openPanel(panel: string) {
+    this.subpanel = panel;
+    // Change the type of extract highlighted by the minimap in function of the current tab
+    if(panel === "passages") {
+      this.minimapType = "matchingpassages";
+    }
+    if(panel === "extracts") {
+      this.minimapType = "extractslocations";
+    }
+    return false;
   }
 
   onPreviewPageChange(event: string | PreviewDocument) {
     if (event instanceof PreviewDocument) {
       this.previewDocument = event;
+      this.loading = false;
     } else {
       this.currentUrl = event;
       this.previewDocument = undefined;
+      this.loading = true;
     }
     this.cdr.detectChanges();
   }
@@ -271,20 +309,25 @@ export class PreviewComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   /**
-   * Resets the state of the page
+   * @returns URL of the original document, if any
    */
-  clear(){
-    this.previewData = undefined;
-    this.previewDocument = undefined;
-    this.downloadUrl = undefined;
+  getOriginalDocUrl(): string | undefined {
+    return this.previewData?.record.url1 || this.previewData?.record.originalUrl;
   }
 
   /**
    * Notification for the audit service
    */
-  openOriginalDoc(){
+  notifyOriginalDoc(){
     if (this.previewData) {
-      this.searchService.notifyOpenOriginalDocument(this.previewData.record);
+      const type = this.previewData?.record.url1? AuditEventType.Doc_Url1 : AuditEventType.Doc_CacheOriginal;
+      this.searchService.notifyOpenOriginalDocument(this.previewData.record, undefined, type);
+    }
+  }
+
+  notifyPdf() {
+    if (this.previewData) {
+      this.searchService.notifyOpenOriginalDocument(this.previewData.record, undefined, AuditEventType.Doc_CachePdf);
     }
   }
 
@@ -296,11 +339,16 @@ export class PreviewComponent implements OnInit, OnChanges, OnDestroy {
     const containerid = this.previewData?.record.containerid;
     if(containerid) {
       const id = `${containerid}/#${page}#`;
-      this.router.navigate([], {
-        relativeTo: this.activatedRoute,
-        queryParams: { id }, // Assumes that we can keep the same query(!)
-        queryParamsHandling: 'merge'
-      });
+
+      // we needs surround router.navigate() as we navigate outside Angular
+      // if an error occurs, this allow page navigation, broken otherwise
+      this.zone.run(() => {
+        this.router.navigate([], {
+          relativeTo: this.activatedRoute,
+          queryParams: { id }, // Assumes that we can keep the same query(!)
+          queryParamsHandling: 'merge'
+        });
+      })
     }
   }
 

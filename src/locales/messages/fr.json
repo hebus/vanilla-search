@@ -50,7 +50,10 @@
     },
 
     "manageBaskets": {
-        "title": "Gérer les collections"
+        "title": "Gérer les collections",
+        "tooltip": {
+            "export": "Exporter cette collection"
+        }
     },
 
     "selectBasket": {
@@ -93,6 +96,11 @@
         "extracts": "Extraits",
         "entities": "Entités",
         "searchText": "Chercher \"{text}\" dans le document",
-        "pageTitle": "Navigateur de documents - {title}"
+        "pageTitle": "Navigateur de documents - {title}",
+        "expand": "Déplier",
+        "back": "Retour",
+        "home": "Accueil",
+        "downloadPdf": "Télécharger la version PDF",
+        "original": "Document original"
     }
 }

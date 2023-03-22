@@ -1,50 +1,40 @@
 {
-    "compileOnSave": false,
-    "compilerOptions": {
-        "baseUrl": "./",
-        "outDir": "./dist/out-tsc",
-        "sourceMap": true,
-        "declaration": false,
-        "downlevelIteration": true,
-        "experimentalDecorators": true,
-        "module": "esnext",
-        "moduleResolution": "node",
-        "importHelpers": true,
-        "target": "es2015",
-        "allowSyntheticDefaultImports": true,
-        "preserveSymlinks": true,
-        "noFallthroughCasesInSwitch": true,
-        "noImplicitReturns": true,
-        "noImplicitThis": true,
-        "noUnusedLocals": true,
-        "strictFunctionTypes": true,
-        "strictNullChecks": true,
-        "resolveJsonModule": true,
-        "typeRoots": [
-            "node_modules/@types",
-            "node_modules/@sinequa/core/@types"
-        ],
-        "lib": [
-            "es2018",
-            "dom"
-        ],
-    },
-    "files": [
-        "src/main.ts",
-        "src/polyfills.ts"
+  "compileOnSave": false,
+  "compilerOptions": {
+    "baseUrl": "./",
+    "outDir": "./dist/out-tsc",
+    "sourceMap": true,
+    "declaration": false,
+    "downlevelIteration": true,
+    "experimentalDecorators": true,
+    "module": "esnext",
+    "moduleResolution": "node",
+    "importHelpers": true,
+    "target": "es2020",
+    "resolveJsonModule": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "preserveSymlinks": true,
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitReturns": true,
+    "noImplicitThis": true,
+    "noUnusedLocals": true,
+    "strictFunctionTypes": true,
+    "strictNullChecks": true,
+    "incremental": true,
+    "noImplicitOverride": true,
+    "typeRoots": [
+      "node_modules/@types",
+      "@sinequa/core/@types",
+      "@sinequa/core/base/strict-union"
     ],
-    "include": [
-        "./**/*.ts",
-        "./src/environments/environment.ts"
-    ],
-    "exclude": [
-        "./test.ts",
-        "./e2e/**/*",
-        "./src/environments/*",
-        "./**/*.spec.ts"
-    ],
-    "angularCompilerOptions": {
-        "fullTemplateTypeCheck": true,
-        "strictInjectionParameters": true
-    }
+    "lib": [
+      "es2020",
+      "dom"
+    ]
+  },
+  "angularCompilerOptions": {
+    "fullTemplateTypeCheck": true,
+    "strictInjectionParameters": true
+  }
 }

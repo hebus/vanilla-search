@@ -1,11 +1,12 @@
 
-@import "~bootstrap/scss/_functions";
-@import "~bootstrap/scss/_variables";
-@import "~sass-color-helpers/stylesheets/_color-helpers";
+@import "bootstrap/scss/_functions";
+@import "bootstrap/scss/_variables";
+@import "sass-color-helpers/stylesheets/_color-helpers";
 @import "metadata";
 
 $extracts-color: lemonchiffon !default;
 $extractslocations-color: $extracts-color !default;
+$passages-color: #fcf2eb;
 $matchlocations-color: yellow !default;
 $matchlocations-border: 1px solid rgba(0,0,0, 0.125);
 
@@ -20,6 +21,11 @@ $extracts-highlights:(
         background-color: $extractslocations-color,
         color: black,
         border: $matchlocations-border
+    ),
+    matchingpassages: (
+      main-color: $passages-color,
+      background-color: $passages-color,
+      color: black
     )
 );
 
@@ -130,18 +136,9 @@ body.bd {
     > div.ph {
         box-shadow: 0 4px 8px 0 rgb(0 0 0 / 20%), 0 6px 20px 0 rgb(0 0 0 / 19%);
     }
-    
-    .pages {
-        zoom: 0.5;
-        content-visibility: auto;
-        display: flex;
-        flex-wrap: wrap;
-        gap: 40px;
-        margin: 20px;
-    }
-    
+
     // as style is inline, this selector is very specific to overrides it
-    div[style="position:relative;border:0px;"] {
+    > div:not(.ph, .phe) {
         margin: 24px;
         content-visibility: visible;
 
@@ -152,7 +149,27 @@ body.bd {
             margin-bottom: 16px;
             margin-right: 16px;
         }
-    
+
+    }
+}
+
+sq-preview-minimap {
+    .minimap {
+        width: 15px;
+        position: fixed;
+        top: 0px;
+        right: 3px;
+        height: 100%;
+        z-index: 100;
+
+        .minimap-section {
+            width: 100%;
+            height: 1px;
+            position: absolute;
+            border: 1px solid orange;
+            background-color: yellow;
+            cursor: pointer;
+        }
     }
 }
 
@@ -261,7 +278,7 @@ line.sq-svg {
     }
 
     --left: 50%;
-    
+
     &::after {
         content: " ";
         position: absolute;
@@ -275,7 +292,7 @@ line.sq-svg {
         bottom: 100%; /* At the top of the tooltip */
         border-color: transparent transparent #4c4c4c transparent;
     }
-    
+
     &.sq-top-tooltip::after {
         top: 100%; /* At the bottom of the tooltip */
         border-color: #4c4c4c transparent transparent transparent;

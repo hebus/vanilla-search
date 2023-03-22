@@ -1,16 +1,15 @@
 import {Component, OnInit, OnDestroy, ViewChild, ElementRef, DoCheck} from '@angular/core';
-import {FormBuilder, FormGroup, FormControl} from "@angular/forms";
+import {UntypedFormBuilder, UntypedFormGroup, UntypedFormControl} from "@angular/forms";
 import {SearchService} from '@sinequa/components/search';
 import {LoginService} from '@sinequa/core/login';
 import {AppService} from '@sinequa/core/app-utils';
-import {Subscription} from 'rxjs';
+import {Subscription, take} from 'rxjs';
 import {FEATURES} from '../../config';
 import {ParseResult} from '@sinequa/components/autocomplete';
 import {AutocompleteExtended} from './autocomplete-extended.directive';
 import {UserPreferences} from '@sinequa/components/user-settings';
 import {FirstPageService} from '@sinequa/components/search';
 import {AdvancedService} from '@sinequa/components/advanced';
-import {take} from 'rxjs/operators';
 import {ActivatedRoute} from '@angular/router';
 import {VoiceRecognitionService} from '@sinequa/components/utils';
 
@@ -20,8 +19,8 @@ import {VoiceRecognitionService} from '@sinequa/components/utils';
   styleUrls: ['./search-form.component.scss']
 })
 export class SearchFormComponent implements OnInit, DoCheck, OnDestroy {
-  searchControl: FormControl;
-  form: FormGroup;
+  searchControl: UntypedFormControl;
+  form: UntypedFormGroup;
   autofocus = 0;
 
   /** Expression from the query selects, if any ("simple"/"selects" field search mode) */
@@ -62,13 +61,13 @@ export class SearchFormComponent implements OnInit, DoCheck, OnDestroy {
   @ViewChild('searchContainer') searchContainer: ElementRef;
   private timeout: any;
 
-  private subscriptions: Subscription[] = [];
+  private subscriptions: Subscription = new Subscription();
 
   constructor(
     public voiceService: VoiceRecognitionService,
     public searchService: SearchService,
     public loginService: LoginService,
-    private formBuilder: FormBuilder,
+    private formBuilder: UntypedFormBuilder,
     public appService: AppService,
     public prefs: UserPreferences,
     public firstPageService: FirstPageService,
@@ -77,7 +76,7 @@ export class SearchFormComponent implements OnInit, DoCheck, OnDestroy {
 
     this.voiceService.init();
 
-    this.subscriptions.push(...[
+    this.subscriptions.add(...[
         this.voiceService.started.subscribe(state => {
         this.voiceRecognitionState = state;
       }),
@@ -92,13 +91,13 @@ export class SearchFormComponent implements OnInit, DoCheck, OnDestroy {
    * Initialization of the form
    */
   ngOnInit() {
-    this.searchControl = new FormControl('');
+    this.searchControl = new UntypedFormControl('');
     this.form = this.formBuilder.group({
       search: this.searchControl
     });
 
     // Every time the query changes, we want to update the search form
-    this.subscriptions.push(this.searchService.queryStream.subscribe(query => {
+    this.subscriptions.add(this.searchService.queryStream.subscribe(query => {
       // Update main search bar
       this.searchControl.setValue(this.searchService.query?.text || '');
       this.fieldSearchExpression = query?.findSelect("search-form")?.expression;
@@ -123,15 +122,22 @@ export class SearchFormComponent implements OnInit, DoCheck, OnDestroy {
     }));
 
     // Initialize the search form options (either now, or when login is complete)
-    if(this.appService.app) {
+    if (this.appService.app) {
       this.setOptions();
     }
     else {
-      this.subscriptions.push(this.loginService.events.subscribe(event => {
-        if(this.appService.app) {
-          this.setOptions();
-        }
-      }));
+      this.subscriptions.add(this.loginService.events.subscribe(
+        (event) => {
+          if (event.type === "login-complete") {
+            if (this.appService.app) {
+              this.setOptions();
+            }
+          }
+          if (event.type === "logout-complete") {
+            this.showAdvancedSearch = false;
+          }
+        })
+      );
     }
   }
 
@@ -141,7 +147,7 @@ export class SearchFormComponent implements OnInit, DoCheck, OnDestroy {
   }
 
   ngOnDestroy() {
-    this.subscriptions.map(item => item.unsubscribe());
+    this.subscriptions.unsubscribe();
   }
 
   setOptions() {
@@ -175,6 +181,7 @@ export class SearchFormComponent implements OnInit, DoCheck, OnDestroy {
 
       /** Store relevant filters (tab ...)*/
       const queryTab = this.searchService.query.tab;
+      const queryScope = this.searchService.query.scope;
 
       /** If this.keepFilters = false, clear the query and reset all its filters. */
       if (!this.keepFilters) {
@@ -185,7 +192,7 @@ export class SearchFormComponent implements OnInit, DoCheck, OnDestroy {
           this.clearAdvancedForm();
         }
       }
-      
+
       /** Close the advanced form */
       this.showAdvancedSearch = false;
 
@@ -212,6 +219,16 @@ export class SearchFormComponent implements OnInit, DoCheck, OnDestroy {
       // if this.keepTab, stay on the same tab even after a new search
       if (this.keepTab && !!queryTab) {
         this.searchService.query.tab = queryTab;
+      }
+
+      if(this.appService.ccquery?.scopesActive && queryScope) {
+        this.searchService.query.scope = queryScope;
+      }
+
+      if (!this.neuralSearch) {
+        this.searchService.query.neuralSearch = false;
+      } else {
+        delete this.searchService.query.neuralSearch;
       }
 
       /** Trigger the search with the new criteria */
@@ -341,6 +358,23 @@ export class SearchFormComponent implements OnInit, DoCheck, OnDestroy {
 
   toggleVoice() {
     this.voiceService.toggleRecognition();
+  }
+
+  get neuralSearch(): boolean {
+    return this.prefs.get("neural-search") !== false; // if undefined, default is true
+  }
+
+  set neuralSearch(val: boolean) {
+    if(val) {
+      this.prefs.delete("neural-search");
+    }
+    else {
+      this.prefs.set("neural-search", false); // if set, neural-search can only be false
+    }
+  }
+
+  toggleNeuralSearch() {
+    this.neuralSearch = !this.neuralSearch;
   }
 
   scrollRight() {

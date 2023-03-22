@@ -1,5 +1,5 @@
 
-@import "~@angular/cdk/overlay-prebuilt";
+@import "@angular/cdk/overlay-prebuilt";
 
 // Overriding Bootstrap variables
 $grid-breakpoints: (
@@ -18,14 +18,20 @@ $container-max-widths: (
 );
 
 // Bootstrap styles
-@import "~bootstrap/scss/bootstrap";
+@import "bootstrap/scss/bootstrap";
 
 // Fontawesome
 $fa-font-path: "~@fortawesome/fontawesome-free/webfonts";
-@import "~@fortawesome/fontawesome-free/scss/fontawesome";
-@import "~@fortawesome/fontawesome-free/scss/brands";
-@import "~@fortawesome/fontawesome-free/scss/regular";
-@import "~@fortawesome/fontawesome-free/scss/solid";
+@import "@fortawesome/fontawesome-free/scss/fontawesome";
+@import "@fortawesome/fontawesome-free/scss/brands";
+@import "@fortawesome/fontawesome-free/scss/regular";
+@import "@fortawesome/fontawesome-free/scss/solid";
+
+@import "vis-network/dist/dist/vis-network.min.css";
+
+.btn-link {
+  text-decoration: none;
+}
 
 // CDK drag & drop
 .cdk-drag-preview {
@@ -45,15 +51,26 @@ sq-validation-message {
 
 // Preview stylings (incl. entity highlights & metadata)
 @import "preview";
+// override preview .matchlocations properties now that the <b> we used to have for them
+// are now with this class
+span.matchlocations:not(.sq-inactive) {
+    font-weight: 600;
+    color: inherit !important;
+    background-color: transparent !important;
+}
 
 // Sinequa components stylesheets
 $action-menu-breakpoint: sm;
-@import "~@sinequa/components/action/bootstrap/action.scss";
-@import "~@sinequa/components/notification/bootstrap/notification.scss";
-@import "~@sinequa/components/metadata/metadata.scss";
-@import "~@sinequa/components/advanced/bootstrap/advanced.scss";
+@import "@sinequa/components/action/bootstrap/action.scss";
+@import "@sinequa/components/notification/bootstrap/notification.scss";
+@import "@sinequa/components/metadata/metadata.scss";
+@import "@sinequa/components/advanced/bootstrap/advanced.scss";
 
-$secondary-color: #6c757d;
+// Sinequa global theme
+@import "@sinequa/components/theme/vanilla";
+@import "@sinequa/components/theme/vanilla-dark";
+
+$secondary-color: #515960;
 
 html {
     height: 100%;
@@ -72,6 +89,20 @@ a {
     min-height: 100vh;
 }
 
+// thin scrollbar
+::-webkit-scrollbar {
+    width: 10px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background-color: #cccccc;
+    &:hover {
+        background-color: #b6b6b6;
+    }
+  }
+  ::-webkit-scrollbar-track {
+    background-color: #f3f3f3;
+  }
+
 // large screens (> sm)
 @include media-breakpoint-up(sm) {
 
@@ -85,7 +116,16 @@ a {
 }
 
 app-search-form {
-    box-shadow: 0px 0px 7px 2px rgba(0,0,0,.08);
+
+    // Styling for the scope component (for a clean rendering within the search form)
+    sq-scope > div {
+      height: 100%;
+      button.btn {
+        height: 100%;
+        border-top-right-radius: 0;
+        border-bottom-right-radius: 0;
+      }
+    }
 
     .autocomplete-item {
         small, i {
@@ -103,14 +143,14 @@ app-search nav {
 
 sq-tabs {
     .nav-item .count {
-        font-size: 0.9em;
+        font-size: 0.875em;
         color: $secondary-color;
     }
 }
 
 sq-results-counter {
     color: $secondary-color;
-    font-size: 0.85em;
+    font-size: 0.875em;
 }
 
 sq-sort-selector button.btn {
@@ -118,7 +158,7 @@ sq-sort-selector button.btn {
     margin: -3px 0;
     color: $secondary-color;
     background-color: inherit;
-    font-size: 0.85em;
+    font-size: 0.875em;
     border: none;
 
     & > div {
@@ -138,6 +178,13 @@ sq-result-title {
     }
 }
 
+sq-result-extracts {
+  p {
+      color: $secondary-color;
+      font-size: 0.875em;
+  }
+}
+
 sq-result-thumbnail img {
     max-width: 100px;
     max-height: 150px;
@@ -150,23 +197,34 @@ sq-sponsored-results {
     }
     .sq-sponsored-link-view-summary {
         color: $secondary-color;
-        font-size: 0.9em;
+        font-size: 0.875em;
     }
 }
 
 // Facets
-sq-facet-card.facet-preview {
-    .card-header {
-        .sq-metadata {
+sq-facet-card {
+  display: block;
+    &.facet-preview {
+        .card-header {
+        sq-metadata {
             color: $secondary-color;
-            font-size: 0.9em;
+            font-size: 0.875em;
         }
+        }
+    }
+}
+
+sq-facet-card.striped .list-group-item:not(.unstriped) {
+    --bs-list-group-bg: #fbfbfb;
+
+    &:nth-child(even) {
+        --bs-list-group-bg: #f6f6f6;
     }
 }
 
 sq-feedback-menu {
     button.btn{
-        border-radius: 19px;
+        border-radius: 50%;
         width: 38px;
         height: 38px;
         padding-left: 10px;
@@ -182,6 +240,21 @@ sq-facet-tree {
     }
 }
 
+sq-facet-list .facet-results-scrollable {
+    max-height: 400px !important;
+}
+
+.sq-passage {
+    .sq-passage-icon {
+        color: var(--bs-primary);
+    }
+    .sq-passage-text {
+        b {
+            font-weight: 700;
+        }
+    }
+}
+
 // Flex basis classes
 .flex-basis-0 {
     flex-basis: 0;
@@ -189,6 +262,10 @@ sq-facet-tree {
 
 .flex-basis-auto {
     flex-basis: auto;
+}
+
+.extracts-date {
+    font-weight: 500;
 }
 
 @import 'dark-mode';

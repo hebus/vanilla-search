@@ -1,17 +1,18 @@
 import {LocaleData} from "@sinequa/core/intl";
-import "moment/locale/de";
-import d3Format from "d3-format/locale/de-DE.json";
-import d3Time from "d3-time-format/locale/de-DE.json";
+import d3Format from "../../node_modules/d3-format/locale/de-DE.json";
+import d3Time from "../../node_modules/d3-time-format/locale/de-DE.json";
 import {deCore} from "@sinequa/core";
 import appMessages from "./messages/de.json";
 import "intl/locale-data/jsonp/de-DE"; // Safari
-import "@formatjs/intl-relativetimeformat/locale-data/de";
+import "@formatjs/intl-relativetimeformat/dist/locale-data/de";
 import {Utils} from "@sinequa/core/base";
+import {deUtils} from "@sinequa/components/utils";
 import {deAdvanced} from "@sinequa/components/advanced";
 import {deAlerts} from "@sinequa/components/alerts";
 import {deBaskets} from "@sinequa/components/baskets";
 import {deFacet} from "@sinequa/components/facet";
 import {deFeedback} from "@sinequa/components/feedback";
+import {deHeatmap} from "@sinequa/analytics/heatmap";
 import {deLabels} from "@sinequa/components/labels";
 import {deMetadata} from "@sinequa/components/metadata";
 import {deNotification} from "@sinequa/components/notification";
@@ -23,9 +24,11 @@ import {deSelection} from "@sinequa/components/selection";
 import {deSearch} from "@sinequa/components/search";
 import {deStatusBar} from "@sinequa/components/status-bar";
 import {deUserSettings} from "@sinequa/components/user-settings";
+import { deTimeline } from "@sinequa/analytics/timeline";
+import { deML } from "@sinequa/components/machine-learning";
 
-const messages = Utils.merge({}, deCore, deAdvanced, deAlerts, deBaskets, deFacet, deFeedback, deLabels, deMetadata,
-    deNotification, dePreview, deResult, deResultsView, deSavedQueries, deSelection, deSearch, deStatusBar, deUserSettings, appMessages);
+const messages = Utils.merge({}, deCore, deUtils, deAdvanced, deAlerts, deBaskets, deFacet, deFeedback, deHeatmap, deLabels, deMetadata,
+    deNotification, dePreview, deResult, deResultsView, deSavedQueries, deSelection, deSearch, deStatusBar, deUserSettings, deTimeline, deML, appMessages);
 
 export default <LocaleData>{
     intl: {

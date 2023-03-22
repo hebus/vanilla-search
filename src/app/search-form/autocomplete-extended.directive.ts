@@ -6,8 +6,7 @@ import { RecentQueriesService, RecentDocumentsService, SavedQueriesService, Rece
 import { PreviewService } from '@sinequa/components/preview';
 import { SearchService } from '@sinequa/components/search';
 import { BasketsService } from '@sinequa/components/baskets';
-import { Observable, forkJoin, from, of } from 'rxjs';
-import { map, catchError } from 'rxjs/operators';
+import { Observable, forkJoin, from, of, map } from 'rxjs';
 import { Basket } from '@sinequa/components/baskets';
 import { AuditEventType, AuditWebService } from '@sinequa/core/web-services';
 
@@ -49,8 +48,8 @@ export class AutocompleteExtended extends AutocompleteFieldSearch {
      * searches for matches in the User Settings objects (recent documents, recent queries, saved
      * queries, baskets)
      */
-    protected getSuggestsObs(value: string, fields?: string[]): Observable<AutocompleteItem[]> {
-    
+    protected override getSuggestsObs(value: string, fields?: string[]): Observable<AutocompleteItem[]> {
+
         // Methods returning (observable of) suggestions from different sources
         let dataSources: Observable<AutocompleteItem[]>[];
         // Fielded search mode
@@ -70,18 +69,15 @@ export class AutocompleteExtended extends AutocompleteFieldSearch {
                 return of([]);
             });
         }
-        
+
         // The forkJoin method allows to merge the suggestions into a single array, so the parent
         // directive only sees a single source.
-        return forkJoin(...dataSources).pipe(
-            map((suggests) => {
-                return [].concat(...suggests)
-                    .sort((a,b) => (b['score'] || 0) - (a['score'] || 0)); // autocomplete items returned by searchData still have their "score" attribute, which is consistent across categories
-            }),
-            catchError((err, caught) => {
-                console.error(err);
-                return [];
-            })
+        return forkJoin(dataSources).pipe(
+            map((suggests) => suggests
+                .flat()
+                .sort((a,b) => (b['score'] || 0) - (a['score'] || 0)) // autocomplete items returned by searchData still have their "score" attribute, which is consistent across categories
+                .map((item, index) => ({...item, rank: index}))
+            )
         );
 
     }
@@ -93,8 +89,16 @@ export class AutocompleteExtended extends AutocompleteFieldSearch {
      * @param item
      * @param submit
      */
-    protected select(item: AutocompleteItem, submit?: boolean) {
-        this.audit.notify({type: AuditEventType.Search_AutoComplete, detail:{display: item.display, category: item.category }})
+    protected override select(item: AutocompleteItem, submit?: boolean) {
+        this.audit.notify({
+            type: AuditEventType.Search_AutoComplete,
+            detail: {
+                  querytext: this.getInputValue(),
+                  display: item.display,
+                  category: item.category,
+                  rank: item.rank
+              }
+          })
 
         if(item.category === "recent-document"){
             this.previewService.openRoute(item['data'], this.searchService.makeQuery());

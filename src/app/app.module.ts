@@ -1,5 +1,6 @@
-import { NgModule/*, APP_INITIALIZER*/ } from "@angular/core";
+import { NgModule, APP_INITIALIZER } from "@angular/core";
 import { BrowserModule } from "@angular/platform-browser";
+import { BrowserAnimationsModule } from "@angular/platform-browser/animations";
 import { RouterModule, Routes } from '@angular/router';
 import { LocationStrategy, HashLocationStrategy } from "@angular/common";
 import { HTTP_INTERCEPTORS } from "@angular/common/http";
@@ -7,7 +8,7 @@ import { FormsModule, ReactiveFormsModule } from "@angular/forms";
 
 // @sinequa/core library
 import { WebServicesModule, StartConfigWebService, StartConfig } from "@sinequa/core/web-services";
-import { LoginModule, LoginInterceptor } from "@sinequa/core/login";
+import { LoginModule, LoginInterceptor, TeamsInitializer, AuthenticationService } from "@sinequa/core/login";
 import { IntlModule } from "@sinequa/core/intl";
 import { ModalModule } from "@sinequa/core/modal";
 import { NotificationsInterceptor } from "@sinequa/core/notification";
@@ -25,13 +26,15 @@ import { BsAlertsModule } from '@sinequa/components/alerts';
 import { BsSavedQueriesModule } from '@sinequa/components/saved-queries';
 import { UtilsModule, SCREEN_SIZE_RULES } from '@sinequa/components/utils';
 import { BsLabelsModule } from '@sinequa/components/labels';
-import { BsUserSettingsModule } from '@sinequa/components/user-settings';
+import { APP_HELP_FOLDER_OPTIONS, BsUserSettingsModule } from '@sinequa/components/user-settings';
 import { ResultModule } from '@sinequa/components/result';
 import { BsFeedbackModule } from '@sinequa/components/feedback';
 import { BsPreviewModule } from '@sinequa/components/preview';
 import { MetadataModule } from '@sinequa/components/metadata';
 import { BsSelectionModule } from '@sinequa/components/selection';
 import { BsAdvancedModule } from '@sinequa/components/advanced';
+import { BsTimelineModule } from '@sinequa/analytics/timeline';
+import { MLModule } from '@sinequa/components/machine-learning';
 
 // Components
 import { AppComponent } from "./app.component";
@@ -44,19 +47,21 @@ import { AutocompleteExtended } from './search-form/autocomplete-extended.direct
 // Environment
 import { environment } from "../environments/environment";
 
+// Help folder options
+import { HELP_DEFAULT_FOLDER_OPTIONS } from "../config";
+
 
 // Initialization of @sinequa/core
 export const startConfig: StartConfig = {
     app: "training",
     production: environment.production,
-    // autoSAMLProvider: environment.autoSAMLProvider,
+    autoSAMLProvider: environment.autoSAMLProvider,
     auditEnabled: true
 };
 
 // @sinequa/core config initializer
-export function StartConfigInitializer(startConfigWebService: StartConfigWebService): () => Promise<StartConfig> {
-    const init = () => startConfigWebService.fetchPreLoginAppConfig().toPromise();
-    return init;
+export function StartConfigInitializer(startConfigWebService: StartConfigWebService) {
+    return () => startConfigWebService.fetchPreLoginAppConfig();
 }
 
 
@@ -105,9 +110,11 @@ export const breakpoints = {
     xs: "(max-width: 575.98px)",
 };
 
+
 @NgModule({
     imports: [
         BrowserModule,
+        BrowserAnimationsModule,
         RouterModule.forRoot(routes),
         FormsModule,
         ReactiveFormsModule,
@@ -134,7 +141,9 @@ export const breakpoints = {
         BsPreviewModule,
         MetadataModule,
         BsSelectionModule,
-        BsAdvancedModule
+        BsAdvancedModule,
+        BsTimelineModule,
+        MLModule
     ],
     declarations: [
         AppComponent,
@@ -149,7 +158,10 @@ export const breakpoints = {
         // server automatically at startup using the application name specified in the URL (app[-debug]/<app-name>).
         // This allows an application to avoid hard-coding parameters in the StartConfig but requires that the application
         // be served from the an app[-debug]/<app name> URL.
-        // {provide: APP_INITIALIZER, useFactory: StartConfigInitializer, deps: [StartConfigWebService], multi: true},
+        {provide: APP_INITIALIZER, useFactory: StartConfigInitializer, deps: [StartConfigWebService], multi: true},
+
+        // Uncomment if the app is to be used with Teams
+        {provide: APP_INITIALIZER, useFactory: TeamsInitializer, deps: [AuthenticationService], multi: true},
 
         // Provides the Angular LocationStrategy to be used for reading route state from the browser's URL. Currently
         // only the HashLocationStrategy is supported by Sinequa.
@@ -168,7 +180,11 @@ export const breakpoints = {
         // member of the response body to any Sinequa web service requests.
         {provide: HTTP_INTERCEPTORS, useClass: NotificationsInterceptor, multi: true},
 
-        {provide: SCREEN_SIZE_RULES, useValue: breakpoints}
+        { provide: SCREEN_SIZE_RULES, useValue: breakpoints },
+
+        // Provides default help's folder options
+        // this options can be overriden by the custom json configuration from the administration panel
+        { provide: APP_HELP_FOLDER_OPTIONS, useValue: HELP_DEFAULT_FOLDER_OPTIONS }
     ],
     bootstrap: [
         AppComponent
